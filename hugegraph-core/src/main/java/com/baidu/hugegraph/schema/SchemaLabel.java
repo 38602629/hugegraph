@@ -44,6 +44,8 @@ public abstract class SchemaLabel extends SchemaElement
     private final Set<Id> nullableKeys;
     private final Set<Id> indexLabels;
     private boolean enableLabelIndex;
+    private long ttl;
+    private Id ttlStartTime;
 
     public SchemaLabel(final HugeGraph graph, Id id, String name) {
         super(graph, id, name);
@@ -51,6 +53,8 @@ public abstract class SchemaLabel extends SchemaElement
         this.nullableKeys = new HashSet<>();
         this.indexLabels = new HashSet<>();
         this.enableLabelIndex = true;
+        this.ttl = 0L;
+        this.ttlStartTime = IdGenerator.ZERO;
     }
 
     @Override
@@ -116,7 +120,24 @@ public abstract class SchemaLabel extends SchemaElement
         return this.name() == UNDEF;
     }
 
-    public static Id getLabelId(GremlinGraph graph, HugeType type, Object label) {
+    public void ttl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    public long ttl() {
+        return this.ttl;
+    }
+
+    public void ttlStartTime(Id id) {
+        this.ttlStartTime = id;
+    }
+
+    public Id ttlStartTime() {
+        return this.ttlStartTime;
+    }
+
+    public static Id getLabelId(GremlinGraph graph, HugeType type,
+                                Object label) {
         E.checkNotNull(graph, "graph");
         E.checkNotNull(type, "type");
         E.checkNotNull(label, "label");
