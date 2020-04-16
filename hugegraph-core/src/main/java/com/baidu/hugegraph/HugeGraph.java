@@ -71,6 +71,7 @@ import com.baidu.hugegraph.traversal.optimize.HugeGraphStepStrategy;
 import com.baidu.hugegraph.traversal.optimize.HugeVertexStepStrategy;
 import com.baidu.hugegraph.type.HugeType;
 import com.baidu.hugegraph.type.define.GraphMode;
+import com.baidu.hugegraph.util.DateUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.LockUtil;
 import com.baidu.hugegraph.util.Log;
@@ -607,6 +608,10 @@ public class HugeGraph implements GremlinGraph {
         return this.configuration;
     }
 
+    public long now() {
+        return ((TinkerpopTransaction) this.tx()).txTime();
+    }
+
     @Override
     public String toString() {
         return StringFactory.graphString(this, this.name());
@@ -709,6 +714,8 @@ public class HugeGraph implements GremlinGraph {
         private final AtomicInteger refs;
         // Flag opened of each thread
         private final ThreadLocal<Boolean> opened;
+        // Last time check flag opened of each thread
+        private final ThreadLocal<Long> lastCheckOpenedTime;
         // Backend transactions
         private final ThreadLocal<Txs> transactions;
 
@@ -717,6 +724,8 @@ public class HugeGraph implements GremlinGraph {
 
             this.refs = new AtomicInteger();
             this.opened = ThreadLocal.withInitial(() -> false);
+            this.lastCheckOpenedTime = ThreadLocal.withInitial(
+                                       () -> DateUtil.now().getTime());
             this.transactions = ThreadLocal.withInitial(() -> null);
         }
 
@@ -761,6 +770,7 @@ public class HugeGraph implements GremlinGraph {
 
         @Override
         public boolean isOpen() {
+            this.lastCheckOpenedTime.set(DateUtil.now().getTime());
             return this.opened.get();
         }
 
@@ -798,6 +808,10 @@ public class HugeGraph implements GremlinGraph {
         public String toString() {
             return String.format("TinkerpopTransaction{opened=%s, txs=%s}",
                                  this.opened.get(), this.transactions.get());
+        }
+
+        public long txTime() {
+            return this.lastCheckOpenedTime.get();
         }
 
         private void verifyOpened() {
